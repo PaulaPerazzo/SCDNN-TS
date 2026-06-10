@@ -30,7 +30,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from matplotlib import pyplot as plt
 from sklearn.metrics import (ConfusionMatrixDisplay, classification_report,
-                             confusion_matrix, plot_confusion_matrix,
+                             confusion_matrix, 
                              roc_auc_score)
 from sklearn.model_selection import train_test_split
 from torch import distributed as dist
@@ -358,7 +358,7 @@ if __name__ == "__main__":
         print('directory {} existing for save result!'.format(args.task_num))
 
     args.model_dir = path + '/'  
-    train_loader, test_loader, val_loader = data_prep(args.task, args.batch_size)
+    train_loader, test_loader, val_loader = data_prep(args.batch_size)
     print('Training set Prepared!')
     print('---------------------------')
 # build the model
@@ -375,7 +375,7 @@ if __name__ == "__main__":
         print('Incorrect task name, check --task !!!')
     
     wandb_name = args.task + '-' + str(args.threshold_ratio)
-    wandb.init(project="tnnls", entity="cl522", name=wandb_name)
+    wandb.init(project="tnnls", name=wandb_name)
 
     wandb.config = {
     "task name": args.task,

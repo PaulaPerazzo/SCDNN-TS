@@ -136,8 +136,23 @@ class SpectralConv1d(nn.Module):
 
     # Complex multiplication
     def compl_mul1d(self, input, weights):
-        # (batch, in_channel, x ), (in_channel, out_channel, x) -> (batch, out_channel, x)
-        return torch.einsum("bix,iox->box", input, weights)
+        # 1. Encontra o menor tamanho entre a entrada (input) e os pesos (weights)
+        min_modes = min(input.size(2), weights.size(2))
+        
+        # 2. Corta ambos para terem o mesmo tamanho (preservando as baixas frequências)
+        inp_sliced = input[:, :, :min_modes]
+        weights_sliced = weights[:, :, :min_modes]
+        
+        # 3. Faz a multiplicação 
+        out_sliced = torch.einsum("bix,iox->box", inp_sliced, weights_sliced.to(input.dtype))
+        
+        # 4. Cria um tensor de zeros do tamanho exato que a rede espera para não quebrar as camadas seguintes
+        out = torch.zeros(input.size(0), weights.size(1), input.size(2), dtype=input.dtype, device=input.device)
+        
+        # 5. Insere o resultado no novo tensor e retorna
+        out[:, :, :min_modes] = out_sliced
+        
+        return out
 
     def forward(self, x):
         
