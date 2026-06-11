@@ -392,7 +392,7 @@ if __name__ == "__main__":
     parser.add_argument("--weight_decay", type=float, default=2e-5)
     parser.add_argument("--lr_dec_rate", type=float, default=0.1)
     parser.add_argument("--lr_dec_step", type=int, default=150)
-    parser.add_argument("--epochs", type=int, default=200)
+    parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--print_step", type=int, default=100)
     parser.add_argument("--task_num", type=int, default=1)
     parser.add_argument("--threshold_ratio", type=float, default=0.2)
@@ -436,7 +436,7 @@ if __name__ == "__main__":
         print("Incorrect task name, check --task !!!")
 
     wandb_name = args.task + "-" + str(args.threshold_ratio)
-    wandb.init(project="tnnls", name=wandb_name)
+    wandb.init(project="tnnls", name=wandb_name, mode="disabled")
 
     wandb.config = {
         "task name": args.task,
