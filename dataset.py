@@ -32,21 +32,30 @@ def data_prep(task, batch_size):
     )
     ###
 
+    # Load full arrays first
     X_train = np.load(P_X_train, allow_pickle=True)
     X_test = np.load(P_X_test, allow_pickle=True)
     X_val = np.load(P_X_val, allow_pickle=True)
 
-    print("X_train loaded:", X_train.shape)
+    y_train = np.load(P_y_train, allow_pickle=True)
+    y_test = np.load(P_y_test, allow_pickle=True)
+    y_val = np.load(P_y_val, allow_pickle=True)
+
+    # For quick local testing, shuffle and load only a small subset of the data
+    train_indices = np.random.permutation(len(X_train))[:1000]
+    test_indices = np.random.permutation(len(X_test))[:200]
+    val_indices = np.random.permutation(len(X_val))[:200]
+
+    X_train, y_train = X_train[train_indices], y_train[train_indices]
+    X_test, y_test = X_test[test_indices], y_test[test_indices]
+    X_val, y_val = X_val[val_indices], y_val[val_indices]
+
+    print("X_train loaded (shuffled subset):", X_train.shape)
 
     # for benchmark
     X_train = np.swapaxes(X_train, 1, 2)
     X_test = np.swapaxes(X_test, 1, 2)
     X_val = np.swapaxes(X_val, 1, 2)
-    ###
-
-    y_train = np.load(P_y_train, allow_pickle=True)
-    y_test = np.load(P_y_test, allow_pickle=True)
-    y_val = np.load(P_y_val, allow_pickle=True)
 
     # for benchmark
     y_train = np.argmax(y_train, axis=1)

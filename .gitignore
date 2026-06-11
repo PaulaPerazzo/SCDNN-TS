@@ -7,3 +7,20 @@ ev
 
 ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3
 ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3.zip
+/ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3
+./ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3
+ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3
+
+env
+
+job_error_2.txt
+job_output_2.txt
+job_error.txt
+job_output.txt
+
+X_test.npy
+y_test.pkl
+X_train.npy
+y_train.pkl
+
+teste_1_menosDados_50_it

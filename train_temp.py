@@ -36,6 +36,25 @@ from sklearn.metrics import (
 from tqdm import tqdm
 import wandb
 
+class EarlyStopping:
+    def __init__(self, patience=7, min_delta=0):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.counter = 0
+        self.best_loss = None
+        self.early_stop = False
+
+    def __call__(self, val_loss):
+        if self.best_loss is None:
+            self.best_loss = val_loss
+        elif val_loss > self.best_loss - self.min_delta:
+            self.counter += 1
+            if self.counter >= self.patience:
+                self.early_stop = True
+        else:
+            self.best_loss = val_loss
+            self.counter = 0
+
 from dataset import data_prep
 
 # import the model build class and dataloader
@@ -62,9 +81,12 @@ def setup_seed(seed):
 def start_train(args, model, train_loader, test_loader, device):
     # learning rate decay and optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones=[100, 150], gamma=0.1
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.5, patience=5, verbose=True
     )
+
+    # Initialize early stopping
+    early_stopping = EarlyStopping(patience=args.patience, min_delta=1e-4)
 
     # loss function
     criterion = nn.CrossEntropyLoss()
@@ -158,11 +180,13 @@ def start_train(args, model, train_loader, test_loader, device):
         )
 
         train_loss_list.append(epoch_loss)
-        scheduler.step()
 
         with torch.no_grad():
             model, test_loss = test(model, criterion, test_loader, device)
             test_loss_list.append(test_loss)
+            
+        # Step the scheduler based on validation loss
+        scheduler.step(test_loss)
 
         # compute ACC
         test_acc = get_acc(model, test_loader)
@@ -197,11 +221,16 @@ def start_train(args, model, train_loader, test_loader, device):
         if epoch % args.print_step == 0:
             print(
                 f"Epoch:{epoch}\t"
-                f"Train Loss:{epoch_loss}\t"
-                f"Val Loss:{test_loss}\t"
-                f"Epoch Acc:{test_acc}"
+                f"Train Loss:{epoch_loss:.4f}\t"
+                f"Val Loss:{test_loss:.4f}\t"
+                f"Epoch Acc:{test_acc:.4f}"
             )
         wandb.log({"acc": test_acc, "train_loss": epoch_loss, "loss": test_loss})
+
+        early_stopping(test_loss)
+        if early_stopping.early_stop:
+            print(f"Early stopping triggered at epoch {epoch}")
+            break
     print(
         "Finished Training in {}, Best Accuracy is {} on {}th epoch".format(
             args.epochs, best_acc, best_epoch
@@ -392,10 +421,11 @@ if __name__ == "__main__":
     parser.add_argument("--weight_decay", type=float, default=2e-5)
     parser.add_argument("--lr_dec_rate", type=float, default=0.1)
     parser.add_argument("--lr_dec_step", type=int, default=150)
-    parser.add_argument("--epochs", type=int, default=200)
-    parser.add_argument("--print_step", type=int, default=100)
+    parser.add_argument("--epochs", type=int, default=100)
+    parser.add_argument("--print_step", type=int, default=1)
     parser.add_argument("--task_num", type=int, default=1)
     parser.add_argument("--threshold_ratio", type=float, default=0.2)
+    parser.add_argument("--patience", type=int, default=10, help="Patience for Early Stopping")
     args = parser.parse_args()
 
     if args.seed:
@@ -436,7 +466,7 @@ if __name__ == "__main__":
         print("Incorrect task name, check --task !!!")
 
     wandb_name = args.task + "-" + str(args.threshold_ratio)
-    wandb.init(project="tnnls", name=wandb_name)
+    wandb.init(project="tnnls", name=wandb_name, mode="disabled")
 
     wandb.config = {
         "task name": args.task,
