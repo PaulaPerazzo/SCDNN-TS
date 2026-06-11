@@ -6,7 +6,7 @@ import math
 
 
 class ResBlock(nn.Module):
-    def __init__(self, inchannel, outchannel, stride=1):
+    def __init__(self, inchannel, outchannel, stride=1, dilation=1):
         super(ResBlock, self).__init__()
 
         self.left = nn.Sequential(
@@ -15,13 +15,14 @@ class ResBlock(nn.Module):
                 outchannel,
                 kernel_size=3,
                 stride=stride,
-                padding=1,
+                padding=dilation,
+                dilation=dilation,
                 bias=False,
             ),
             nn.BatchNorm1d(outchannel),
             nn.ReLU(inplace=True),
             nn.Conv1d(
-                outchannel, outchannel, kernel_size=3, stride=1, padding=1, bias=False
+                outchannel, outchannel, kernel_size=3, stride=1, padding=dilation, dilation=dilation, bias=False
             ),
             nn.BatchNorm1d(outchannel),
         )
@@ -42,7 +43,8 @@ class ResBlock(nn.Module):
                     outchannel // 2,
                     kernel_size=3,
                     stride=1,
-                    padding=1,
+                    padding=dilation,
+                    dilation=dilation,
                     bias=False,
                 ),
                 nn.BatchNorm1d(outchannel),
@@ -212,10 +214,10 @@ class ResNet_PTB(nn.Module):
             nn.ReLU(),
         )
 
-        self.layer1 = self.make_layer(ResBlock, 64, 2, stride=1)
-        self.layer2 = self.make_layer(ResBlock, 128, 2, stride=2)
-        self.layer3 = self.make_layer(ResBlock, 256, 2, stride=2)
-        self.layer4 = self.make_layer(ResBlock, 512, 2, stride=2)
+        self.layer1 = self.make_layer(ResBlock, 64, 2, stride=1, dilation=1)
+        self.layer2 = self.make_layer(ResBlock, 128, 2, stride=2, dilation=2)
+        self.layer3 = self.make_layer(ResBlock, 256, 2, stride=2, dilation=4)
+        self.layer4 = self.make_layer(ResBlock, 512, 2, stride=2, dilation=8)
 
         # self.fft32 = SpectralConv1d(64, 64, init_threshold = 0.2, k1=self.k1, k2=self.k2)
         # signal shape must be defined various in each fft layer
@@ -246,11 +248,11 @@ class ResNet_PTB(nn.Module):
 
         # self.dropout = nn.Dropout(0.3)
 
-    def make_layer(self, block, channels, num_blocks, stride):
+    def make_layer(self, block, channels, num_blocks, stride, dilation=1):
         strides = [stride] + [1] * (num_blocks - 1)
         layers = []
         for stride in strides:
-            layers.append(block(self.inchannel, channels, stride))
+            layers.append(block(self.inchannel, channels, stride, dilation=dilation))
             self.inchannel = channels
         return nn.Sequential(*layers)
 
