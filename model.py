@@ -2,6 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
 
 
 class ResBlock(nn.Module):
@@ -119,24 +120,20 @@ class SpectralConv1d(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.signal_shape = signal_shape
-        # self.k1= nn.Parameter(torch.tensor(k1))
-        # self.k2= nn.Parameter(torch.tensor(k2))
 
-        # self.k1= (torch.tensor(k1))
-        # self.k2= (torch.tensor(k2))
-
-        self.threshold = nn.Parameter(torch.tensor(init_threshold))
-        self.threshold.requires_grad = True
+        # Initialize raw_threshold such that sigmoid(raw_threshold) = init_threshold
+        init_raw = math.log(init_threshold / (1.0 - init_threshold))
+        self.raw_threshold = nn.Parameter(torch.tensor(init_raw))
+        self.raw_threshold.requires_grad = True
 
         self.scale = 1 / (in_channels * out_channels)
-        # signal_shape must be defined various with layers
+        self.modes = signal_shape // 2 + 1
         self.weights = nn.Parameter(
             self.scale
-            * torch.rand(in_channels, out_channels, signal_shape, dtype=torch.cfloat)
+            * torch.rand(in_channels, out_channels, self.modes, dtype=torch.cfloat)
         )
 
     def bi_mod_sigmoid(self, threshold_co, fft_co_len, sig_co):
-        # threhold_func = 1/(1+torch.exp(-self.k1*(sig_co - threshold_co1*fft_co_len))+torch.exp(-self.k2*(sig_co - threshold_co2*fft_co_len)))
         threhold_func = 1 / (1 + torch.exp(-0.5 * (sig_co - threshold_co * fft_co_len)))
         return threhold_func
 
@@ -176,28 +173,27 @@ class SpectralConv1d(nn.Module):
         input = input.to(torch.cfloat)
         return torch.einsum("bix,iox->box", input, weights)
 
-    def forward(self, x):
+    @property
+    def threshold(self):
+        return torch.sigmoid(self.raw_threshold)
 
+    def forward(self, x):
         x_ft = torch.fft.rfft(x)
 
-        modes = x.size(-1) // 2 + 1
+        # Get the threshold value
+        threshold_co = torch.sigmoid(self.raw_threshold)
 
-        # clamp threshold
-        self.threshold.data = self.threshold.clamp(min=0.001, max=1.0)
+        # Apply soft-adaptive threshold in frequency domain
+        x_ft_low = self.low_sigmoid_step(threshold_co, x_ft)
+        x_ft_high = self.high_sigmoid_step(threshold_co, x_ft)
 
-        # Return to physical space
-        x = torch.fft.irfft(
-            self.low_sigmoid_step(self.threshold, x_ft[:, :, :modes]), n=x.size(-1)
-        )
-        minus_x = torch.fft.irfft(
-            self.high_sigmoid_step(self.threshold, x_ft[:, :, :modes]), n=x.size(-1)
-        )
+        # Perform complex matrix multiplication in the frequency domain (Spectral Conv)
+        x_ft_low = self.compl_mul1d(x_ft_low, self.weights)
+        x_ft_high = self.compl_mul1d(x_ft_high, self.weights)
 
-        x = self.compl_mul1d(x[:, :, :], self.weights)
-        minus_x = self.compl_mul1d(minus_x[:, :, :], self.weights)
-
-        x = x.real
-        minus_x = minus_x.real
+        # Return to physical space (time domain)
+        x = torch.fft.irfft(x_ft_low, n=x.size(-1))
+        minus_x = torch.fft.irfft(x_ft_high, n=x.size(-1))
 
         x, minus_x = F.hardswish(x), F.hardswish(minus_x)
         return x, minus_x
@@ -229,10 +225,15 @@ class ResNet_PTB(nn.Module):
         self.fft256 = SpectralConv1d(256, 256, init_threshold=0.2, signal_shape=125)
         self.fft512 = SpectralConv1d(512, 512, init_threshold=0.2, signal_shape=63)
 
-        # self.low_ratio, self.high_ratio = torch.tensor(-0.5) ,torch.tensor(0.5)
-        self.low_ratio, self.high_ratio = nn.Parameter(torch.tensor(0.0)), nn.Parameter(
-            torch.tensor(0.0)
-        )
+        # Layer-specific ratio parameters to decouple gradient learning
+        self.low_ratio1 = nn.Parameter(torch.tensor(0.0))
+        self.high_ratio1 = nn.Parameter(torch.tensor(0.0))
+        self.low_ratio2 = nn.Parameter(torch.tensor(0.0))
+        self.high_ratio2 = nn.Parameter(torch.tensor(0.0))
+        self.low_ratio3 = nn.Parameter(torch.tensor(0.0))
+        self.high_ratio3 = nn.Parameter(torch.tensor(0.0))
+        self.low_ratio4 = nn.Parameter(torch.tensor(0.0))
+        self.high_ratio4 = nn.Parameter(torch.tensor(0.0))
 
         # self.DAT64 = ChannelAttention(64)
         # self.DAT128 = ChannelAttention(128)
@@ -265,28 +266,28 @@ class ResNet_PTB(nn.Module):
 
         out = self.layer1(out)
         low_fft, high_fft = self.fft64(out)
-        out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
+        out = out + self.low_ratio1 * low_fft + self.high_ratio1 * high_fft
         # out = self.DAT64(out)
 
         # -------------------------------------------------Res block 2
 
         out = self.layer2(out)
         low_fft, high_fft = self.fft128(out)
-        out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
+        out = out + self.low_ratio2 * low_fft + self.high_ratio2 * high_fft
         # out = self.DAT128(out)
 
         # -------------------------------------------------Res block 3
 
         out = self.layer3(out)
         low_fft, high_fft = self.fft256(out)
-        out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
+        out = out + self.low_ratio3 * low_fft + self.high_ratio3 * high_fft
         # out = self.DAT256(out)
 
         # -------------------------------------------------Res block 4
 
         out = self.layer4(out)
         low_fft, high_fft = self.fft512(out)
-        out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
+        out = out + self.low_ratio4 * low_fft + self.high_ratio4 * high_fft
         # out = self.DAT512(out)
 
         # -------------------------------------------------Pooling block

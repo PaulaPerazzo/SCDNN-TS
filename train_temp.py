@@ -36,7 +36,6 @@ from sklearn.metrics import (
 from tqdm import tqdm
 import wandb
 
-from Adam import Adam as newAdam
 from dataset import data_prep
 
 # import the model build class and dataloader
@@ -62,14 +61,9 @@ def setup_seed(seed):
 
 def start_train(args, model, train_loader, test_loader, device):
     # learning rate decay and optimizer
-    # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    optimizer = newAdam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    # optimizer = torch.optim.Adam(
-    #     model.parameters(), lr=args.lr, weight_decay=args.weight_decay
-    # )
-    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_dec_step, gamma=args.lr_dec_rate)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones=[200, 700], gamma=0.1
+        optimizer, milestones=[100, 150], gamma=0.1
     )
 
     # loss function
@@ -175,8 +169,18 @@ def start_train(args, model, train_loader, test_loader, device):
         test_acc_list.append(test_acc.cpu().detach().numpy())
 
         # collect ratio and adaptive threshold
-        low_freq_ratio_list.append(model.low_ratio.cpu().detach().numpy())
-        high_freq_ratio_list.append(model.high_ratio.cpu().detach().numpy())
+        low_freq_ratio_list.append([
+            model.low_ratio1.item(),
+            model.low_ratio2.item(),
+            model.low_ratio3.item(),
+            model.low_ratio4.item()
+        ])
+        high_freq_ratio_list.append([
+            model.high_ratio1.item(),
+            model.high_ratio2.item(),
+            model.high_ratio3.item(),
+            model.high_ratio4.item()
+        ])
 
         # threshold_list['fft32'].append(model.fft32.threshold.cpu().detach().numpy())
         threshold_list["fft64"].append(model.fft64.threshold.cpu().detach().numpy())
