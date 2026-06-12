@@ -194,11 +194,10 @@ class ResNet_PTB(nn.Module):
         self.fft256 = SpectralConv1d(256, 256, init_threshold=0.2, signal_shape=125)
         self.fft512 = SpectralConv1d(512, 512, init_threshold=0.2, signal_shape=63)
 
-        # Decoupling layer-specific scaling parameters to stabilize gradients
-        self.low_ratio_1, self.high_ratio_1 = nn.Parameter(torch.tensor(0.0)), nn.Parameter(torch.tensor(0.0))
-        self.low_ratio_2, self.high_ratio_2 = nn.Parameter(torch.tensor(0.0)), nn.Parameter(torch.tensor(0.0))
-        self.low_ratio_3, self.high_ratio_3 = nn.Parameter(torch.tensor(0.0)), nn.Parameter(torch.tensor(0.0))
-        self.low_ratio_4, self.high_ratio_4 = nn.Parameter(torch.tensor(0.0)), nn.Parameter(torch.tensor(0.0))
+        # self.low_ratio, self.high_ratio = torch.tensor(-0.5) ,torch.tensor(0.5)
+        self.low_ratio, self.high_ratio = nn.Parameter(torch.tensor(0.0)), nn.Parameter(
+            torch.tensor(0.0)
+        )
 
         # self.DAT64 = ChannelAttention(64)
         # self.DAT128 = ChannelAttention(128)
@@ -231,28 +230,28 @@ class ResNet_PTB(nn.Module):
 
         out = self.layer1(out)
         low_fft, high_fft = self.fft64(out)
-        out = out + self.low_ratio_1 * low_fft + self.high_ratio_1 * high_fft
+        out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
         # out = self.DAT64(out)
 
         # -------------------------------------------------Res block 2
 
         out = self.layer2(out)
         low_fft, high_fft = self.fft128(out)
-        out = out + self.low_ratio_2 * low_fft + self.high_ratio_2 * high_fft
+        out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
         # out = self.DAT128(out)
 
         # -------------------------------------------------Res block 3
 
         out = self.layer3(out)
         low_fft, high_fft = self.fft256(out)
-        out = out + self.low_ratio_3 * low_fft + self.high_ratio_3 * high_fft
+        out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
         # out = self.DAT256(out)
 
         # -------------------------------------------------Res block 4
 
         out = self.layer4(out)
         low_fft, high_fft = self.fft512(out)
-        out = out + self.low_ratio_4 * low_fft + self.high_ratio_4 * high_fft
+        out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
         # out = self.DAT512(out)
 
         # -------------------------------------------------Pooling block

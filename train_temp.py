@@ -178,18 +178,8 @@ def start_train(args, model, train_loader, test_loader, device):
         test_acc_list.append(test_acc.cpu().detach().numpy())
 
         # collect ratio and adaptive threshold
-        low_freq_ratio_list.append([
-            model.low_ratio_1.item(),
-            model.low_ratio_2.item(),
-            model.low_ratio_3.item(),
-            model.low_ratio_4.item()
-        ])
-        high_freq_ratio_list.append([
-            model.high_ratio_1.item(),
-            model.high_ratio_2.item(),
-            model.high_ratio_3.item(),
-            model.high_ratio_4.item()
-        ])
+        low_freq_ratio_list.append(model.low_ratio.cpu().detach().numpy())
+        high_freq_ratio_list.append(model.high_ratio.cpu().detach().numpy())
 
         # threshold_list['fft32'].append(model.fft32.threshold.cpu().detach().numpy())
         threshold_list["fft64"].append(model.fft64.threshold.cpu().detach().numpy())
