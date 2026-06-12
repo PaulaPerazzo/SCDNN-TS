@@ -82,7 +82,7 @@ def start_train(args, model, train_loader, test_loader, device):
     # learning rate decay and optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode='min', factor=0.5, patience=5, verbose=True
+        optimizer, mode='min', factor=0.5, patience=5
     )
 
     # Initialize early stopping
@@ -425,7 +425,7 @@ if __name__ == "__main__":
     parser.add_argument("--print_step", type=int, default=1)
     parser.add_argument("--task_num", type=int, default=1)
     parser.add_argument("--threshold_ratio", type=float, default=0.2)
-    parser.add_argument("--patience", type=int, default=10, help="Patience for Early Stopping")
+    parser.add_argument("--patience", type=int, default=20, help="Patience for Early Stopping")
     args = parser.parse_args()
 
     if args.seed:

@@ -42,9 +42,9 @@ def data_prep(task, batch_size):
     y_val = np.load(P_y_val, allow_pickle=True)
 
     # For quick local testing, shuffle and load only a small subset of the data
-    train_indices = np.random.permutation(len(X_train))[:1000]
-    test_indices = np.random.permutation(len(X_test))[:200]
-    val_indices = np.random.permutation(len(X_val))[:200]
+    train_indices = np.random.permutation(len(X_train))[:2000]
+    test_indices = np.random.permutation(len(X_test))[:300]
+    val_indices = np.random.permutation(len(X_val))[:300]
 
     X_train, y_train = X_train[train_indices], y_train[train_indices]
     X_test, y_test = X_test[test_indices], y_test[test_indices]
