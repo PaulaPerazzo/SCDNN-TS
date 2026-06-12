@@ -157,9 +157,11 @@ def start_train(args, model, train_loader, test_loader, device):
     ) = ([], [], [], [])
     # threshold_list['fft32'], threshold_list['fft64'], threshold_list['fft128'], threshold_list['fft256'], threshold_list['fft512'] = [], [], [], [], []
 
+    best_loss = float('inf')
     best_acc = 0
     best_model = None
     best_epoch = 0
+    patience_counter = 0
 
     for epoch in tqdm(range(args.epochs)):  # loop over the dataset multiple epochs
         model, optimizer, epoch_loss = train(
@@ -187,11 +189,18 @@ def start_train(args, model, train_loader, test_loader, device):
         threshold_list["fft256"].append(model.fft256.threshold.cpu().detach().numpy())
         threshold_list["fft512"].append(model.fft512.threshold.cpu().detach().numpy())
 
-        # update best model
-        if test_acc > best_acc:
+        # update best model based on validation loss
+        if test_loss < best_loss:
+            best_loss = test_loss
             best_acc = test_acc
             best_model = copy.deepcopy(model)
             best_epoch = epoch
+            patience_counter = 0
+        else:
+            patience_counter += 1
+            if patience_counter >= args.patience:
+                print(f"\nEarly stopping triggered at epoch {epoch}")
+                break
 
         if epoch % args.print_step == 0:
             print(
@@ -395,6 +404,7 @@ if __name__ == "__main__":
     parser.add_argument("--print_step", type=int, default=100)
     parser.add_argument("--task_num", type=int, default=1)
     parser.add_argument("--threshold_ratio", type=float, default=0.2)
+    parser.add_argument("--patience", type=int, default=15, help="Patience for Early Stopping")
     args = parser.parse_args()
 
     if args.seed:
