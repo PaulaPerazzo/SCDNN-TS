@@ -2,3 +2,7 @@
 /__pycache__
 /wandb
 .DS_Store
+
+job_error_2.txt
+job_output_2.txt
+env
