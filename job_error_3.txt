@@ -1,18 +1,0 @@
-wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/CIN/mpps/.netrc.
-wandb: Currently logged in as: mpperazzosampaio (mpperazzosampaio-cin-ufpe) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
-wandb: setting up run a205wnge
-wandb: Tracking run with wandb version 0.27.2
-wandb: Run data is saved locally in /home/CIN/mpps/redes-neurais/SCDNN-TS/wandb/run-20260612_121232-a205wnge
-wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run superclass-0.2
-wandb: ⭐️ View project at https://wandb.ai/mpperazzosampaio-cin-ufpe/tnnls
-wandb: 🚀 View run at https://wandb.ai/mpperazzosampaio-cin-ufpe/tnnls/runs/a205wnge
-  0%|          | 0/100 [00:00<?, ?it/s]  0%|          | 0/100 [09:03<?, ?it/s]
-Traceback (most recent call last):
-  File "/home/CIN/mpps/redes-neurais/SCDNN-TS/train_temp.py", line 460, in <module>
-    ) = start_train(args, model, train_loader, test_loader, device)
-  File "/home/CIN/mpps/redes-neurais/SCDNN-TS/train_temp.py", line 185, in start_train
-    low_freq_ratio_list.append(model.low_ratio.cpu().detach().numpy())
-  File "/home/CIN/mpps/redes-neurais/SCDNN-TS/env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1967, in __getattr__
-    raise AttributeError(
-AttributeError: 'ResNet_PTB' object has no attribute 'low_ratio'

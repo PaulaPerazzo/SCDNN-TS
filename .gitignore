@@ -5,6 +5,13 @@
 
 job_error_2.txt
 job_output_2.txt
+job_error_3.txt
+job_output_3.txt
+job_error_test_cnn_dilatada.txt
+job_output_test_cnn_dilatada.txt
+job_error_test_cnn.txt
+job_output_test_cnn.txt
+
 env
 
 .ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3.zip

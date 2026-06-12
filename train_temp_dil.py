@@ -40,7 +40,8 @@ from Adam import Adam as newAdam
 from dataset import data_prep
 
 # import the model build class and dataloader
-from model import ResBlock, ResNet_PTB, SpectralConv1d
+# from model import ResBlock, ResNet_PTB, SpectralConv1d
+from model_dilated import ResBlock, ResNet_PTB, SpectralConv1d
 
 # check device available
 if torch.cuda.is_available():
