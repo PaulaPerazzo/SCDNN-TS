@@ -41,6 +41,7 @@ from dataset import data_prep
 
 # import the model build class and dataloader
 from model import ResBlock, ResNet_PTB, SpectralConv1d
+from loss_library import FocalLoss
 
 # check device available
 if torch.cuda.is_available():
@@ -75,7 +76,12 @@ def start_train(args, model, train_loader, test_loader, device):
     )
 
     # loss function
-    criterion = nn.CrossEntropyLoss()
+    if args.criterion == 'focalloss':
+        criterion = FocalLoss(gamma=2.0)
+        print("Using Focal Loss")
+    else:
+        criterion = nn.CrossEntropyLoss()
+        print("Using Cross Entropy Loss")
 
     print("Start training model...")
     print("---------------------------")
