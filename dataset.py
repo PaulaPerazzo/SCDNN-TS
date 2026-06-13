@@ -151,9 +151,9 @@ def data_prep(task, batch_size, train_samples=1000, val_samples=200, test_sample
     valset = dataset(signal=X_val, label=converted_y_val)
 
     # Lembre-se de adequar o batch_size das validações se o dataset for menor que ele
-    train_loader = DataLoader(dataset=trainset, batch_size=batch_size, pin_memory=True, shuffle=True)
-    test_loader = DataLoader(dataset=testset, batch_size=min(2048, len(testset)), pin_memory=True, shuffle=False)
-    val_loader = DataLoader(dataset=valset, batch_size=min(1024, len(valset)), pin_memory=True, shuffle=False)
+    train_loader = DataLoader(dataset=trainset, batch_size=batch_size, pin_memory=False, shuffle=True, num_workers=4)
+    test_loader = DataLoader(dataset=testset, batch_size=min(2048, len(testset)), pin_memory=False, shuffle=False, num_workers=4)
+    val_loader = DataLoader(dataset=valset, batch_size=min(1024, len(valset)), pin_memory=False, shuffle=False, num_workers=4)
 
     return train_loader, test_loader, val_loader
 

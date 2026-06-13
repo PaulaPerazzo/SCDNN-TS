@@ -84,19 +84,24 @@ def start_train(args, model, train_loader, test_loader, device):
     def train(model, criterion, optimizer, train_loader, device):
         epoch_loss = 0.0
         model.train()
-        for data in train_loader:
+        for i, data in enumerate(train_loader):
+            if i == 0: print("  -> [Debug] Fetched first batch from DataLoader")
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data
             inputs = inputs.to(device)
             labels = labels.reshape(-1).to(device)
+            if i == 0: print("  -> [Debug] Data moved to GPU")
             optimizer.zero_grad()
 
             outputs = model(inputs)
+            if i == 0: print("  -> [Debug] Forward pass completed")
 
             loss = criterion(outputs, labels)
 
             loss.backward()
+            if i == 0: print("  -> [Debug] Backward pass completed")
             optimizer.step()
+            if i == 0: print("  -> [Debug] Optimizer step completed")
 
             epoch_loss += loss.item()
         return model, optimizer, epoch_loss / len(train_loader)

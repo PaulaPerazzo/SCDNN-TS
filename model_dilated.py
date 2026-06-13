@@ -14,8 +14,8 @@ class ResBlock(nn.Module):
                 outchannel,
                 kernel_size=3,
                 stride=stride,
-                padding=dilation,
-                dilation=dilation,
+                padding=1 if stride != 1 else dilation,
+                dilation=1 if stride != 1 else dilation,
                 bias=False,
             ),
             nn.BatchNorm1d(outchannel),
@@ -143,12 +143,13 @@ class SpectralConv1d(nn.Module):
 
     def forward(self, x):
 
-        x_ft = torch.fft.rfft(x)
+        x_ft = torch.fft.rfft(x.contiguous())
 
         modes = x.size(-1) // 2 + 1
 
         # clamp threshold
-        self.threshold.data = self.threshold.clamp(min=0.001, max=1.0)
+        with torch.no_grad():
+            self.threshold.clamp_(min=0.001, max=1.0)
 
         # Return to physical space
         x = torch.fft.irfft(
