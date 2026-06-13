@@ -7,10 +7,10 @@
 #SBATCH -c 16
 #SBATCH -p short-simple
 #SBATCH -o job.log
-#SBATCH --output=job_output_test_cnn_dilatada_focalloss.txt
-#SBATCH --error=job_error_test_cnn_dilatada_focalloss.txt
+#SBATCH --output=job_output_test_cnn_dilatada_adamw.txt
+#SBATCH --error=job_error_test_cnn_dilatada_adamw.txt
 
 source env/bin/activate
 
 # python3 generate_data.py
-python3 train_temp_dil.py --epochs 100 --task_num 5 --patience 100
+python3 train_temp_dil.py --epochs 100 --task_num 6 --patience 100
