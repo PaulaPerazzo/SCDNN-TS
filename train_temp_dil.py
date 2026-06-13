@@ -66,15 +66,14 @@ def setup_seed(seed):
 
 def start_train(args, model, train_loader, test_loader, device):
     # learning rate decay and optimizer
-    # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    optimizer = newAdam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    # optimizer = torch.optim.Adam(
-    #     model.parameters(), lr=args.lr, weight_decay=args.weight_decay
-    # )
-    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_dec_step, gamma=args.lr_dec_rate)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones=[200, 700], gamma=0.1
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    print(f"Using AdamW optimizer (lr={args.lr}, weight_decay={args.weight_decay})")
+    
+    # Cosine Annealing with Warm Restarts: T_0 = restart period, T_mult = multiplier
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+        optimizer, T_0=20, T_mult=2, eta_min=1e-6
     )
+    print(f"Using CosineAnnealingWarmRestarts scheduler (T_0=20, T_mult=2, eta_min=1e-6)")
 
     # loss function
     if args.criterion == 'focalloss':
@@ -408,7 +407,7 @@ if __name__ == "__main__":
     parser.add_argument("--criterion", default="focalloss")
     parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument("--lr", type=float, default=0.001)
-    parser.add_argument("--weight_decay", type=float, default=2e-5)
+    parser.add_argument("--weight_decay", type=float, default=1e-4)
     parser.add_argument("--lr_dec_rate", type=float, default=0.1)
     parser.add_argument("--lr_dec_step", type=int, default=150)
     parser.add_argument("--epochs", type=int, default=200)
