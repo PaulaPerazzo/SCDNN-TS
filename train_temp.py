@@ -20,6 +20,7 @@ import argparse
 import os
 import pickle
 import random
+import time
 
 import numpy as np
 import pandas as pd
@@ -42,6 +43,7 @@ from dataset import data_prep
 # import the model build class and dataloader
 from model import ResBlock, ResNet_PTB, SpectralConv1d
 from loss_library import FocalLoss
+from notification import notificar_ntfy
 
 # check device available
 if torch.cuda.is_available():
@@ -85,6 +87,8 @@ def start_train(args, model, train_loader, test_loader, device):
 
     print("Start training model...")
     print("---------------------------")
+    
+    time_start = time.time()
 
     def train(model, criterion, optimizer, train_loader, device):
         epoch_loss = 0.0
@@ -220,6 +224,12 @@ def start_train(args, model, train_loader, test_loader, device):
             args.epochs, best_acc, best_epoch
         )
     )
+
+    time_end = time.time()
+    total_time = time_end - time_start
+
+    print("total training time: ", total_time)
+    notificar_ntfy("Seu modelo acabou de rodar")
 
     # save model
     if args.save_model:
@@ -399,13 +409,13 @@ if __name__ == "__main__":
     parser.add_argument("--model_dir", type=str, default="superclass/")
     parser.add_argument("--seed", type=int, default=33)
     parser.add_argument("--save_model", action="store_true", default=True)
-    parser.add_argument("--criterion", default="focalloss")
-    parser.add_argument("--batch_size", type=int, default=256)
-    parser.add_argument("--lr", type=float, default=0.001)
+    parser.add_argument("--criterion", default="")
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight_decay", type=float, default=2e-5)
     parser.add_argument("--lr_dec_rate", type=float, default=0.1)
     parser.add_argument("--lr_dec_step", type=int, default=150)
-    parser.add_argument("--epochs", type=int, default=200)
+    parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--print_step", type=int, default=100)
     parser.add_argument("--task_num", type=int, default=1)
     parser.add_argument("--threshold_ratio", type=float, default=0.2)

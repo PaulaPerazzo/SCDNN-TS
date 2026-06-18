@@ -182,10 +182,11 @@ class ResNet_PTB(nn.Module):
             nn.ReLU(),
         )
 
+
         self.layer1 = self.make_layer(ResBlock, 64, 2, stride=1, dilation=1)
         self.layer2 = self.make_layer(ResBlock, 128, 2, stride=2, dilation=2)
-        self.layer3 = self.make_layer(ResBlock, 256, 2, stride=2, dilation=4)
-        self.layer4 = self.make_layer(ResBlock, 512, 2, stride=2, dilation=8)
+        self.layer3 = self.make_layer(ResBlock, 256, 2, stride=2, dilation=2)
+        self.layer4 = self.make_layer(ResBlock, 512, 2, stride=2, dilation=4)
 
         # self.fft32 = SpectralConv1d(64, 64, init_threshold = 0.2, k1=self.k1, k2=self.k2)
         # signal shape must be defined various in each fft layer
@@ -200,10 +201,10 @@ class ResNet_PTB(nn.Module):
             torch.tensor(0.0)
         )
 
-        # self.DAT64 = ChannelAttention(64)
-        # self.DAT128 = ChannelAttention(128)
-        # self.DAT256 = ChannelAttention(256)
-        # self.DAT512 = ChannelAttention(512)
+        self.DAT64 = ChannelAttention(64)
+        self.DAT128 = ChannelAttention(128)
+        self.DAT256 = ChannelAttention(256)
+        self.DAT512 = ChannelAttention(512)
 
         self.fc2 = nn.Linear(1024, num_classes)
         self.adapt_avg = nn.AdaptiveAvgPool1d(1)
@@ -232,28 +233,28 @@ class ResNet_PTB(nn.Module):
         out = self.layer1(out)
         low_fft, high_fft = self.fft64(out)
         out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
-        # out = self.DAT64(out)
+        out = self.DAT64(out)
 
         # -------------------------------------------------Res block 2
 
         out = self.layer2(out)
         low_fft, high_fft = self.fft128(out)
         out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
-        # out = self.DAT128(out)
+        out = self.DAT128(out)
 
         # -------------------------------------------------Res block 3
 
         out = self.layer3(out)
         low_fft, high_fft = self.fft256(out)
         out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
-        # out = self.DAT256(out)
+        out = self.DAT256(out)
 
         # -------------------------------------------------Res block 4
 
         out = self.layer4(out)
         low_fft, high_fft = self.fft512(out)
         out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
-        # out = self.DAT512(out)
+        out = self.DAT512(out)
 
         # -------------------------------------------------Pooling block
         out_1, out_2 = self.adapt_max(out), self.adapt_avg(out)
@@ -262,8 +263,7 @@ class ResNet_PTB(nn.Module):
         out = out.reshape(out.size(0), -1)
 
         # -------------------------------------------------FC block
-        out = self.fc2(out)
-
         out = self.dropout(out)
+        out = self.fc2(out)
 
         return out

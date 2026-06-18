@@ -20,6 +20,7 @@ import argparse
 import os
 import pickle
 import random
+import time
 
 import numpy as np
 import pandas as pd
@@ -43,6 +44,7 @@ from dataset import data_prep
 # from model import ResBlock, ResNet_PTB, SpectralConv1d
 from model_dilated import ResBlock, ResNet_PTB, SpectralConv1d
 from loss_library import FocalLoss
+from notification import notificar_ntfy
 
 # check device available
 if torch.cuda.is_available():
@@ -67,8 +69,17 @@ def setup_seed(seed):
 def start_train(args, model, train_loader, test_loader, device):
     # learning rate decay and optimizer
     optimizer = newAdam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones=[200, 700], gamma=0.1
+    
+    # scheduler = torch.optim.lr_scheduler.MultiStepLR(
+    #     optimizer, milestones=[200, 700], gamma=0.1
+    # )
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, 
+        mode='min',
+        factor=0.1,
+        patience=3,
+        # verbose=True
     )
 
     # loss function
@@ -81,6 +92,8 @@ def start_train(args, model, train_loader, test_loader, device):
 
     print("Start training model...")
     print("---------------------------")
+
+    start_time = time.time()
 
     def train(model, criterion, optimizer, train_loader, device):
         epoch_loss = 0.0
@@ -175,11 +188,13 @@ def start_train(args, model, train_loader, test_loader, device):
         )
 
         train_loss_list.append(epoch_loss)
-        scheduler.step()
+        # scheduler.step()
 
         with torch.no_grad():
             model, test_loss = test(model, criterion, test_loader, device)
             test_loss_list.append(test_loss)
+
+        scheduler.step(test_loss)
 
         # compute ACC
         test_acc = get_acc(model, test_loader)
@@ -221,6 +236,12 @@ def start_train(args, model, train_loader, test_loader, device):
             args.epochs, best_acc, best_epoch
         )
     )
+
+    end_time = time.time()
+    total_time = end_time - start_time
+
+    print("total time in training: ", total_time)
+    notificar_ntfy("Seu modelo acabou de rodar")
 
     # save model
     if args.save_model:
@@ -401,12 +422,12 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=33)
     parser.add_argument("--save_model", action="store_true", default=True)
     parser.add_argument("--criterion", default="focalloss")
-    parser.add_argument("--batch_size", type=int, default=256)
-    parser.add_argument("--lr", type=float, default=0.001)
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight_decay", type=float, default=2e-5)
     parser.add_argument("--lr_dec_rate", type=float, default=0.1)
     parser.add_argument("--lr_dec_step", type=int, default=150)
-    parser.add_argument("--epochs", type=int, default=200)
+    parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--print_step", type=int, default=100)
     parser.add_argument("--task_num", type=int, default=1)
     parser.add_argument("--threshold_ratio", type=float, default=0.2)
