@@ -41,7 +41,8 @@ from Adam import Adam as newAdam
 from dataset import data_prep
 
 # import the model build class and dataloader
-from model import ResBlock, ResNet_PTB, SpectralConv1d
+# from model import ResBlock, ResNet_PTB, SpectralConv1d
+from model_dilated import ResBlock, ResNet_PTB, SpectralConv1d
 from loss_library import FocalLoss
 from notification import notificar_ntfy
 
@@ -67,14 +68,18 @@ def setup_seed(seed):
 
 def start_train(args, model, train_loader, test_loader, device):
     # learning rate decay and optimizer
-    # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     optimizer = newAdam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    # optimizer = torch.optim.Adam(
-    #     model.parameters(), lr=args.lr, weight_decay=args.weight_decay
+    
+    # scheduler = torch.optim.lr_scheduler.MultiStepLR(
+    #     optimizer, milestones=[200, 700], gamma=0.1
     # )
-    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_dec_step, gamma=args.lr_dec_rate)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones=[200, 700], gamma=0.1
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, 
+        mode='min',
+        factor=0.1,
+        patience=3,
+        # verbose=True
     )
 
     # loss function
@@ -87,25 +92,30 @@ def start_train(args, model, train_loader, test_loader, device):
 
     print("Start training model...")
     print("---------------------------")
-    
-    time_start = time.time()
+
+    start_time = time.time()
 
     def train(model, criterion, optimizer, train_loader, device):
         epoch_loss = 0.0
         model.train()
-        for data in train_loader:
+        for i, data in enumerate(train_loader):
+            if i == 0: print("  -> [Debug] Fetched first batch from DataLoader")
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data
             inputs = inputs.to(device)
             labels = labels.reshape(-1).to(device)
+            if i == 0: print("  -> [Debug] Data moved to GPU")
             optimizer.zero_grad()
 
             outputs = model(inputs)
+            if i == 0: print("  -> [Debug] Forward pass completed")
 
             loss = criterion(outputs, labels)
 
             loss.backward()
+            if i == 0: print("  -> [Debug] Backward pass completed")
             optimizer.step()
+            if i == 0: print("  -> [Debug] Optimizer step completed")
 
             epoch_loss += loss.item()
         return model, optimizer, epoch_loss / len(train_loader)
@@ -178,11 +188,13 @@ def start_train(args, model, train_loader, test_loader, device):
         )
 
         train_loss_list.append(epoch_loss)
-        scheduler.step()
+        # scheduler.step()
 
         with torch.no_grad():
             model, test_loss = test(model, criterion, test_loader, device)
             test_loss_list.append(test_loss)
+
+        scheduler.step(test_loss)
 
         # compute ACC
         test_acc = get_acc(model, test_loader)
@@ -225,10 +237,10 @@ def start_train(args, model, train_loader, test_loader, device):
         )
     )
 
-    time_end = time.time()
-    total_time = time_end - time_start
+    end_time = time.time()
+    total_time = end_time - start_time
 
-    print("total training time: ", total_time)
+    print("total time in training: ", total_time)
     notificar_ntfy("Seu modelo acabou de rodar")
 
     # save model
@@ -409,7 +421,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_dir", type=str, default="superclass/")
     parser.add_argument("--seed", type=int, default=33)
     parser.add_argument("--save_model", action="store_true", default=True)
-    parser.add_argument("--criterion", default="")
+    parser.add_argument("--criterion", default="focalloss")
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight_decay", type=float, default=2e-5)
