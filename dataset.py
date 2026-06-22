@@ -130,8 +130,8 @@ def data_prep(task, batch_size, train_samples=None, val_samples=None, test_sampl
     testset = dataset(signal=X_test, label=converted_y_test)
     valset = dataset(signal=X_val, label=converted_y_val)
 
-    train_loader = DataLoader(dataset=trainset, batch_size=batch_size, pin_memory=False, shuffle=True, num_workers=4)
-    test_loader = DataLoader(dataset=testset, batch_size=batch_size, pin_memory=False, shuffle=False, num_workers=4)
-    val_loader = DataLoader(dataset=valset, batch_size=batch_size, pin_memory=False, shuffle=False, num_workers=4)
+    train_loader = DataLoader(dataset=trainset, batch_size=batch_size, pin_memory=False, shuffle=True, num_workers=2)
+    test_loader = DataLoader(dataset=testset, batch_size=batch_size, pin_memory=False, shuffle=False, num_workers=2)
+    val_loader = DataLoader(dataset=valset, batch_size=batch_size, pin_memory=False, shuffle=False, num_workers=2)
 
     return train_loader, test_loader, val_loader

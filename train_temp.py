@@ -229,7 +229,7 @@ def start_train(args, model, train_loader, test_loader, device):
     total_time = time_end - time_start
 
     print("total training time: ", total_time)
-    notificar_ntfy("Seu modelo acabou de rodar")
+    notificar_ntfy("Seu modelo benchmark acabou de rodar")
 
     # save model
     if args.save_model:

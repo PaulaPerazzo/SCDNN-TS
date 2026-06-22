@@ -239,7 +239,10 @@ class ResNet_PTB(nn.Module):
         # self.DAT256 = ChannelAttention(256)
         # self.DAT512 = ChannelAttention(512)
 
-        self.fc2 = nn.Linear(1024, num_classes)
+        # self.fc2 = nn.Linear(128, num_classes) # 0 blocks and 1 block
+        # self.fc2 = nn.Linear(256, num_classes) # 2 blocks
+        self.fc2 = nn.Linear(512, num_classes) # 3 blocks
+        # self.fc2 = nn.Linear(1024, num_classes) # 4 blocks
         self.adapt_avg = nn.AdaptiveAvgPool1d(1)
         self.adapt_max = nn.AdaptiveMaxPool1d(1)
 
@@ -284,9 +287,9 @@ class ResNet_PTB(nn.Module):
 
         # -------------------------------------------------Res block 4
 
-        out = self.layer4(out)
-        low_fft, high_fft = self.fft512(out)
-        out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
+        # out = self.layer4(out)
+        # low_fft, high_fft = self.fft512(out)
+        # out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
         # out = self.DAT512(out)
 
         # -------------------------------------------------Pooling block

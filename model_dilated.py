@@ -213,7 +213,7 @@ class ResNet_PTB(nn.Module):
         # - For 2 blocks: self.fc2 = nn.Linear(256, num_classes)
         # - For 3 blocks: self.fc2 = nn.Linear(512, num_classes)
         # - For 4 blocks: self.fc2 = nn.Linear(1024, num_classes) [Original]
-        self.fc2 = nn.Linear(128, num_classes) # Current configuration: 0 blocks
+        self.fc2 = nn.Linear(512, num_classes) # Current configuration: 3 blocks
         self.adapt_avg = nn.AdaptiveAvgPool1d(1)
         self.adapt_max = nn.AdaptiveMaxPool1d(1)
 
@@ -236,7 +236,7 @@ class ResNet_PTB(nn.Module):
         # out = out + self.low_ratio*low_fft + self.high_ratio*high_fft
 
         # INSTRUCTIONS FOR ABLATION TEST (Varying the number of blocks: 0, 1, 2, 3, 4):
-        # - For 0 blocks: Comment out all blocks 1, 2, 3, and 4 (Current)
+        # - For 0 blocks: Comment out all blocks 1, 2, 3, and 4 (Current) OK
         # - For 1 block:  Uncomment Res block 1; comment out Res block 2, 3, and 4
         # - For 2 blocks: Uncomment Res block 1 and 2; comment out Res block 3 and 4
         # - For 3 blocks: Uncomment Res block 1, 2, and 3; comment out Res block 4
@@ -244,24 +244,24 @@ class ResNet_PTB(nn.Module):
 
         # -------------------------------------------------Res block 1
 
-        # out = self.layer1(out)
-        # low_fft, high_fft = self.fft64(out)
-        # out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
-        # out = self.DAT64(out)
+        out = self.layer1(out)
+        low_fft, high_fft = self.fft64(out)
+        out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
+        out = self.DAT64(out)
 
         # -------------------------------------------------Res block 2
 
-        # out = self.layer2(out)
-        # low_fft, high_fft = self.fft128(out)
-        # out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
-        # out = self.DAT128(out)
+        out = self.layer2(out)
+        low_fft, high_fft = self.fft128(out)
+        out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
+        out = self.DAT128(out)
 
         # -------------------------------------------------Res block 3
 
-        # out = self.layer3(out)
-        # low_fft, high_fft = self.fft256(out)
-        # out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
-        # out = self.DAT256(out)
+        out = self.layer3(out)
+        low_fft, high_fft = self.fft256(out)
+        out = out + self.low_ratio * low_fft + self.high_ratio * high_fft
+        out = self.DAT256(out)
 
         # -------------------------------------------------Res block 4
 
