@@ -169,5 +169,8 @@ np.save(os.path.join(OUTPUT_DIR, "y_val.npy"), y_val.astype(np.float32))
 
 np.save(os.path.join(OUTPUT_DIR, "y_test.npy"), y_test.astype(np.float32))
 
+np.save(os.path.join(OUTPUT_DIR, "x.npy"), X.astype(np.float32))
+Y.to_csv(os.path.join(OUTPUT_DIR, "y.csv"), index=False)
+
 print("\nFiles saved to:")
 print(OUTPUT_DIR)

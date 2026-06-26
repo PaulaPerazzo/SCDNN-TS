@@ -1,0 +1,26 @@
+phase: tunning
+
+tracker:
+  project_name: neural_networks_2026
+
+data_loader:
+  name: ptbxl
+
+pre_processing:
+  name: none
+
+modeling:
+  structure:
+    name: resnet_ptb
+  
+  training:
+    name: dnn
+    criterion: cross_entropy_loss
+    learning_rate: 0.001
+    num_epochs: 200
+    es_patience: 10
+    es_delta: 0.0001
+    batch_size: 128
+
+metrics:
+  name: logistic_multi_classifier_metrics
